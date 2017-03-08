@@ -1,0 +1,135 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# autor: Ignacio Gilbaja
+# date: 2015-10-03
+# mail: jose-ignacio.gilbaja@deimos-space.com,
+# version: 1.0
+
+###################################################################################################
+# version 1.0 release notes:
+# Initial version
+# Requisites: library python-mysqldb. To install: "apt-get install python-mysqldb"
+# Working mode: get MySQL stats 
+####################################################################################################
+
+import string, cgi, time
+import time
+import sys
+import MySQLdb
+import datetime
+import os
+import logging, logging.handlers
+import subprocess
+from datetime import date, timedelta
+
+
+
+#### VARIABLES #########################################################
+
+DB_IP = "192.168.28.251"
+DB_USER = "root"
+DB_PASSWORD = "dat1234"
+DB_NAME = "INFORMATION_SCHEMA"
+
+RELEVANT_STATS = ["COM_SELECT", "COM_INSERT", "COM_UPDATE", "COM_DELETE", "COM_REPLACE", "COM_CALL_PROCEDURE"]
+
+FILE = "/tmp/stats"
+
+now = int(time.time())
+
+########################################################################
+	
+# dictionary to store stats
+nowStats = {}
+
+def getSTATS():
+	try:
+		db = MySQLdb.connect(DB_IP, DB_USER, DB_PASSWORD, DB_NAME)
+	except Exception, error:
+		print error
+	cursor = db.cursor()	
+	cursor.execute("""select * from GLOBAL_STATUS;""")
+	result = cursor.fetchall()
+	cursor.close
+	db.close
+	return result
+
+def getMAXCON():
+	try:
+		db = MySQLdb.connect(DB_IP, DB_USER, DB_PASSWORD, DB_NAME)
+	except Exception, error:
+		print error
+	cursor = db.cursor()	
+	cursor.execute("""SELECT VARIABLE_NAME, VARIABLE_VALUE FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES WHERE VARIABLE_NAME = 'MAX_CONNECTIONS';""")
+	result = cursor.fetchall()
+	cursor.close
+	db.close
+	return result
+
+def writeStats(stats):
+	try:
+		os.remove(FILE)
+	except:
+		pass
+	fid = open(FILE, 'w')
+	fid.write("timestamp:" +  str(now) + "\n")
+	for values in RELEVANT_STATS:
+		fid.write(values + ":" + stats[values] + "\n")
+	fid.close()
+	sys.exit(0)
+
+
+for data in getSTATS():
+	nowStats[data[0]] = data[1]
+
+print nowStats
+
+for data in getMAXCON():
+	nowStats[data[0]] = data[1]
+
+def readStats():
+        try:
+                with open(FILE, "r") as ins:
+                        old_stats = {}
+                        for line in ins:
+                                data = line.split(":")
+                                old_stats[data[0]]=data[1][0:len(data[1])-1]
+                return old_stats
+        except:
+                writeStats(nowStats)
+		sys.exit(0)
+
+#writeStats(stats_result)
+
+# fisrt we read las stats
+lastStats = readStats()
+
+secondsFromLast = now - int( lastStats["timestamp"])
+selectFromLast = int(nowStats["COM_SELECT"]) - int(lastStats["COM_SELECT"])
+insertFromLast = int(nowStats["COM_INSERT"]) - int(lastStats["COM_INSERT"])
+updateFromLast = int(nowStats["COM_UPDATE"]) - int(lastStats["COM_UPDATE"])
+deleteFromLast = int(nowStats["COM_DELETE"]) - int(lastStats["COM_DELETE"])
+replaceFromLast = int(nowStats["COM_REPLACE"]) - int(lastStats["COM_REPLACE"])
+callFromLast = int(nowStats["COM_CALL_PROCEDURE"]) - int(lastStats["COM_CALL_PROCEDURE"])
+
+
+selectAv = int(selectFromLast/secondsFromLast)
+insertAv = int(insertFromLast/secondsFromLast)
+updateAv = int(updateFromLast/secondsFromLast)
+deleteAv = int(deleteFromLast/secondsFromLast)
+replaceAv = int(replaceFromLast/secondsFromLast)
+callAv = int(callFromLast/secondsFromLast)
+
+
+#writeStats(nowStats)
+
+print "OK - MySQL stats| %s=%s %s=%s %s=%s %s=%s %s=%s %s=%s %s=%s %s=%s %s=%s %s=%s" % ("COM_SELECT", selectAv, "COM_INSERT", insertAv, "COM_UPDATE", updateAv, "COM_DELETE", deleteAv, "COM_REPLACE", replaceAv,
+"COM_CALL_PROCEDURE", callAv, "MAX_CONNECTIONS", nowStats["MAX_CONNECTIONS"], "MAX_USED_CONNECTIONS", nowStats["MAX_USED_CONNECTIONS"],
+"THREADS_RUNNING", nowStats["THREADS_RUNNING"], "THREADS_CONNECTED", nowStats["THREADS_CONNECTED"])
+
+
+writeStats(nowStats)
+sys.exit(0)
+
+
