@@ -25,16 +25,17 @@ from datetime import date, timedelta
 RELEVANT_STATS = ["TOTAL", "API_LOGIN", "APP_LOGIN", "APP_NOTIFICATIONS"]
 
 FILE = "./mail.log"
-OUT = "./mail_stats.csv"
+OUT = "./mail_stats.log"
 
 now = int(time.time())
 
 ########################################################################
 
 # dictionary to store stats
-nowStats = {}
+mailStats = dict()
 
 def readStats():
+	global mailStats
 	file = open(FILE, 'r')
 	for line in file:
 		vline = line.split(' to=<')
@@ -42,20 +43,34 @@ def readStats():
 			for i in range (1,len(vline)):
 				element = vline[i]
 				if (element.find('@')>-1):
-					print element[0:element.find('>')]
+					mail = element[0:element.find('>')]
+					#print mail
+					if (mailStats.has_key(mail)):
+						mailStats[mail] = mailStats[mail]+1
+					else:
+						mailStats[mail] = 1
 
-def writeStats(stats):
+def writeStats():
 	fid = open(OUT, 'w')
-	fid.write("timestamp:" +  str(now) + "\n")
+	nElements = len(mailStats.keys())
+	i=1
+	for key in mailStats.keys():
+		if (i<nElements):
+			fid.write("['" +  str(key) + "'," + str(mailStats[key]) + "],")
+		else:
+			fid.write("['" +  str(key) + "'," + str(mailStats[key]) + "]")
+		i=i+1
 	#for values in RELEVANT_STATS:
 	#	fid.write(values + ":" + stats[values] + "\n")
 	fid.close()
 
 
 
-nowStats = readStats()
+readStats()
+writeStats()
 
-print "OK"
+print mailStats
+
 
 sys.exit(0)
 
