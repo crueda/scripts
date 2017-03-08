@@ -37,8 +37,12 @@ nowStats = {}
 def readStats():
 	file = open(FILE, 'r')
 	for line in file:
-		vline = line.split('to=<')
-		print vline[0]
+		vline = line.split(' to=<')
+		if (len(vline)>1):
+			for i in range (1,len(vline)):
+				element = vline[i]
+				if (element.find('@')>-1):
+					print element[0:element.find('>')]
 
 def writeStats(stats):
 	fid = open(OUT, 'w')
