@@ -22,10 +22,9 @@ from datetime import date, timedelta
 
 #### VARIABLES #########################################################
 
-RELEVANT_STATS = ["TOTAL", "API_LOGIN", "APP_LOGIN", "APP_NOTIFICATIONS"]
-
 FILE = "./mail.log"
 OUT = "./mail_stats.log"
+OUT_DOMAIN = "./mail_domain_stats.log"
 
 now = int(time.time())
 
@@ -33,6 +32,7 @@ now = int(time.time())
 
 # dictionary to store stats
 mailStats = dict()
+mailDomainStats = dict()
 
 def readStats():
 	global mailStats
@@ -44,11 +44,17 @@ def readStats():
 				element = vline[i]
 				if (element.find('@')>-1):
 					mail = element[0:element.find('>')]
+					domain = mail[mail.find('@')+1:len(mail)]
+					#print domain
 					#print mail
 					if (mailStats.has_key(mail)):
 						mailStats[mail] = mailStats[mail]+1
 					else:
 						mailStats[mail] = 1
+					if (mailDomainStats.has_key(domain)):
+						mailDomainStats[domain] = mailDomainStats[domain]+1
+					else:
+						mailDomainStats[domain] = 1
 
 def writeStats():
 	fid = open(OUT, 'w')
@@ -60,10 +66,18 @@ def writeStats():
 		else:
 			fid.write("['" +  str(key) + "'," + str(mailStats[key]) + "]")
 		i=i+1
-	#for values in RELEVANT_STATS:
-	#	fid.write(values + ":" + stats[values] + "\n")
 	fid.close()
 
+	fidDomain = open(OUT_DOMAIN, 'w')
+	nElements = len(mailDomainStats.keys())
+	i=1
+	for key in mailDomainStats.keys():
+		if (i<nElements):
+			fidDomain.write("['" +  str(key) + "'," + str(mailDomainStats[key]) + "],")
+		else:
+			fidDomain.write("['" +  str(key) + "'," + str(mailDomainStats[key]) + "]")
+		i=i+1
+	fidDomain.close()
 
 
 readStats()
