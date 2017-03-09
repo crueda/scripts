@@ -23,6 +23,7 @@ from datetime import date, timedelta
 #### VARIABLES #########################################################
 
 FILE = "./mail.log"
+OUT_DATE = "./mail_date_stats.log"
 OUT = "./mail_stats.log"
 OUT_DOMAIN = "./mail_domain_stats.log"
 
@@ -33,11 +34,18 @@ now = int(time.time())
 # dictionary to store stats
 mailStats = dict()
 mailDomainStats = dict()
+initDate = ""
 
 def readStats():
 	global mailStats
+	global initDate
 	file = open(FILE, 'r')
+	init_line = False
 	for line in file:
+		if (init_line==False):
+			vinitline = line.split('mail-server')
+			initDate = vinitline[0]
+			init_line = True
 		vline = line.split(' to=<')
 		if (len(vline)>1):
 			for i in range (1,len(vline)):
@@ -79,11 +87,14 @@ def writeStats():
 		i=i+1
 	fidDomain.close()
 
+	fidDate = open(OUT_DATE, 'w')
+	fidDate.write(initDate)
+	fidDate.close()
 
 readStats()
 writeStats()
 
-print mailStats
+#print mailStats
 
 
 sys.exit(0)
