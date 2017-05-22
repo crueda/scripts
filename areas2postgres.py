@@ -105,7 +105,7 @@ for entry in areas:
         except Exception, error:
             print 'Error para la zona' + str(entry[0]) + ': %s' % (str(error))
 
-'''
+
 areasCircular = getAreasCircular()
 for entry in areasCircular:
     geom = getGeomCircular(entry[0], entry[3])
@@ -117,4 +117,3 @@ for entry in areasCircular:
             conn.commit()
         except Exception, error:
             print 'Error para la zona' + str(entry[0]) + ': %s' % (str(error))
-'''
